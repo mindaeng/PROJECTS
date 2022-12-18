@@ -1,0 +1,148 @@
+data_21_F<-read.csv("D:/KOPIS/최종원본/2021_상반기데이터.csv")
+View(data_21_F)
+data_21_F<-data_21_F[,-1]
+data_21_F<-data_21_F[,-68]
+
+ticket_p <- data_21_F$예매.취소금액 + data_21_F$할인금액
+data_21_F[,"티켓금액"] <- ticket_p
+
+
+#1000개 이하인 데이터 제거
+
+install.packages("dplyr")
+library(dplyr)
+
+x<-table(data_21_F$공연코드)>1000
+y<-table(data_21_F$공연코드)[x]
+z<-data.frame(y)
+name<-z[,1]
+name<- as.character(name)
+
+
+df<- filter(data_21_F, 공연코드 %in% name)
+View(df)
+rm(data_21_F)
+#예매취소구분 0,1로 전환 (0이 예매취소)
+i<-data_21_F$예매.취소구분==2
+data_21_F[i,]$예매.취소구분 <- 0
+
+i<-df$예매.취소구분==2
+df[i,]$예매.취소구분 <- 0
+
+df_data <- df %>% group_by(공연코드) %>% summarise(total = n())
+df_data
+
+rm(data_21_F)
+
+#취소율 데이터 만들기
+df_data.1 <- df %>% group_by(공연코드) %>% summarise(percent = mean(예매.취소구분))
+df_data.취소율 <- df %>% group_by(공연코드) %>% summarise(예매취소율 = 1 - mean(예매.취소구분))
+df_data.3 <- df %>% group_by(공연코드) %>% summarise(예매수 = sum(예매.취소구분))
+df_data.평균연령 <- df %>% group_by(공연코드) %>% summarise(평균연령 = 2019 - mean())
+str(df)
+
+View(df_data.1)
+
+#공연 별 데이터프레임 만들기
+df_unique <- unique(df[, c(7:17,20:23,25,44,45,49,59:62,66)])
+View(df_unique)
+View(df)
+
+#오름차순 정렬
+df_unique <- df_unique[order(df_unique$공연코드),]
+df_data.취소율 <- df_data.취소율[order(df_data.취소율$공연코드),]
+df_data.1 <- df_data.1[order(df_data.1$공연코드),]
+View(df_data.취소율)
+
+df_unique<- cbind(df_unique,df_data.1$예매수)
+df_unique<- cbind(df_unique,df_data.1$percent)
+df_unique<- cbind(df_unique,df_data.취소율$예매취소율)
+
+if (df_unique$장애인석 == "N") {
+  df_unique$장애인석 = "N"
+} else {
+  df_unique$장애인석 = "Y"
+}
+
+is.numeric(df_unique$장애인석)
+
+df_unique$장애인석 <- ifelse (df_unique$장애인석 == "N" , "N" , "Y")
+
+View(df_unique)
+
+str(df)
+
+예매율<- 1-df_unique$df_data.취소율.예매취소율
+df_unique <- cbind (df_unique,예매율)
+
+#평균연령 열 만들어주기
+df <- df[!(df$연령== 0 ), ]
+df_data.평균연령 <- df %>% group_by(공연코드) %>% summarise(평균연령 = 2019 - mean(연령))
+
+
+write.csv(df_unique,"D:/KOPIS/범주형데이터/19년도_상반기_범주형데이터.csv")
+
+df_unique <- read.csv("D:/KOPIS/범주형데이터/19년도_상반기_범주형데이터.csv",stringsAsFactors = TRUE)
+str(df_unique)
+
+
+df_unique$편의시설_레스토랑.여부 <- ifelse (df_unique$편의시설_레스토랑.여부 == "N" , 0 , 1)
+df_unique$편의시설_카페.여부 <- ifelse (df_unique$편의시설_카페.여부 == "N" , 0 , 1)
+df_unique$편의시설_편의점.여부 <- ifelse (df_unique$편의시설_편의점.여부 == "N" , 0 , 1)
+df_unique$편의시설_놀이방.여부 <- ifelse (df_unique$편의시설_놀이방.여부 == "N" , 0 , 1)
+df_unique$편의시설_수유실.여부 <- ifelse (df_unique$편의시설_수유실.여부 == "N" , 0 , 1)
+df_unique$장애인시설_주차장.여부  <- ifelse (df_unique$장애인시설_주차장.여부  == "N" , 0 , 1)
+df_unique$장애인시설_화장실.여부  <- ifelse (df_unique$장애인시설_화장실.여부  == "N" , 0 , 1)
+df_unique$장애인시설_경사로.여부 <- ifelse (df_unique$장애인시설_경사로.여부 == "N" , 0 , 1)
+df_unique$장애인시설_전용엘리베이터.여부 <- ifelse (df_unique$장애인시설_전용엘리베이터.여부 == "N" , 0 , 1)
+df_unique$주차시설_자체.여부 <- ifelse (df_unique$주차시설_자체.여부 == "N" , 0 , 1)
+df_unique$주차시설_공영.여부  <- ifelse (df_unique$주차시설_공영.여부  == "N" , 0 , 1)
+df_unique$장애인석 <- ifelse (df_unique$장애인석 == "N" , 0 , 1)
+df_unique$무대시설_오케스트라피트.여부 <- ifelse (df_unique$무대시설_오케스트라피트.여부 == "N" , 0 , 1)
+df_unique$무대시설_연습실.여부 <- ifelse (df_unique$무대시설_연습실.여부 == "N" , 0 , 1)
+df_unique$무대시설_분장실.여부 <- ifelse (df_unique$무대시설_분장실.여부 == "N" , 0 , 1)
+
+View(df_unique)
+
+install.packages("psych")
+library(psych)
+factor <- principal(df_unique, rotate="none")
+
+cor.test(df_unique[,2],df_unique[,3])
+plot(df_unique[,2],df_unique[,3])
+str(df_unique)
+
+df_cor<- cor(df_unique[,2:16])
+install.packages("corrplot")
+
+ggcorrplot(df_cor)
+
+lm_fit <- lm(df_data.1.예매수  ~ 편의시설_레스토랑.여부 + 편의시설_카페.여부 + 편의시설_편의점.여부 +  편의시설_놀이방.여부
+             + 편의시설_수유실.여부 + 장애인시설_주차장.여부 + 장애인시설_화장실.여부 + 장애인시설_경사로.여부 + 장애인시설_전용엘리베이터.여부 +
+               주차시설_자체.여부 + 주차시설_공영.여부 + 장애인석 + 무대시설_오케스트라피트.여부 + 무대시설_연습실.여부 + 무대시설_분장실.여부, data=df_unique)
+
+lm_fit <- lm(예매율  ~ 편의시설_카페.여부 + 편의시설_편의점.여부 +  편의시설_놀이방.여부
+             + 장애인시설_주차장.여부 +
+               주차시설_자체.여부 + 주차시설_공영.여부, data=df_unique)
+
+lm_fit <- lm(df_data.취소율.예매취소율  ~  편의시설_카페.여부 + 편의시설_편의점.여부 +  편의시설_놀이방.여부 + 장애인시설_주차장.여부 + 
+               주차시설_자체.여부 + 주차시설_공영.여부 , data=df_unique)
+
+lm_fit <- lm(df_data.1.예매수  ~ 편의시설_카페.여부 + 편의시설_편의점.여부 
+             + 편의시설_수유실.여부 + 장애인시설_주차장.여부 + 장애인시설_화장실.여부 + 장애인시설_경사로.여부 , data=df_unique)
+
+
+vif(lm_fit)
+
+summary(lm_fit)
+plot(lm_fit)
+colnames(df_unique)
+
+set.seed(20175550)
+train <- sample(1:543, 350)
+
+tree <- rpart(예매율  ~ 편의시설_카페.여부 + 편의시설_편의점.여부 +  편의시설_놀이방.여부
+              + 장애인시설_주차장.여부 +
+                주차시설_자체.여부 + 주차시설_공영.여부, data= df_unique, subset =train, method = "class")
+rpart.plot(tree)
+install.packages("rpart.plot")
